@@ -1,7 +1,10 @@
-name: Publish
+name: CI
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -28,10 +31,11 @@ jobs:
         run: dotnet build --no-restore -c Release
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --no-build -c Release --verbosity normal
 
       - name: Pack
         run: dotnet pack --no-build -c Release
 
       - name: Publish to GitHub Packages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: dotnet nuget push "src/SwissDwellings/bin/Release/*.nupkg" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
