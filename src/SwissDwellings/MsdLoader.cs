@@ -52,10 +52,9 @@ namespace SwissDwellings
              using var stream = File.OpenRead(jsonFilePath);
              var graph = JsonSerializer.Deserialize<MsdGraph>(stream, _options);
 
-             if (graph != null)
-             {
-                 ParseGeometries(graph);
-             }
+             if (graph == null) throw new InvalidOperationException("Failed to deserialize graph.");
+
+             ParseGeometries(graph);
 
              return graph;
         }
