@@ -39,11 +39,16 @@ print(json.dumps(data))
 ";
             await File.WriteAllTextAsync(_scriptPath, pythonCode);
             await File.WriteAllTextAsync(_dataPath, "dummy data");
+
+            // Override the script path for testing
+            SwissDwellingLoader.ScriptOverride = _scriptPath;
         }
 
         public async Task DisposeAsync()
         {
              // Cleanup
+             SwissDwellingLoader.ScriptOverride = null;
+
             if (File.Exists(_scriptPath)) File.Delete(_scriptPath);
             if (File.Exists(_dataPath)) File.Delete(_dataPath);
             await Task.CompletedTask;
@@ -53,8 +58,8 @@ print(json.dumps(data))
         public async Task LoadLayoutsAsync_ReturnsLayouts_WhenScriptExecutedSuccessfully()
         {
             // Act
-            // Use the internal overload to test with a specific script
-            var result = await SwissDwellingLoader.LoadLayoutsInternalAsync(_dataPath, _scriptPath);
+            // We pass the data path, but the script path is handled via ScriptOverride
+            var result = await SwissDwellingLoader.LoadLayoutsAsync(_dataPath);
 
             // Assert
             result.Should().NotBeNull();

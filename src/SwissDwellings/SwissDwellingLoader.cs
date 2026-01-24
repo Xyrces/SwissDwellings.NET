@@ -12,6 +12,7 @@ namespace SwissDwellings
     public static class SwissDwellingLoader
     {
         private static string? _defaultPythonExecutable;
+        internal static string? ScriptOverride { get; set; }
 
         private static string GetDefaultPythonExecutable()
         {
@@ -55,19 +56,6 @@ namespace SwissDwellings
             string? pythonExecutable = null,
             Action<string>? logger = null)
         {
-            // Resolve the internal script path
-            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var internalScriptPath = Path.Combine(assemblyLocation!, "Resources", "loader.py");
-
-            return await LoadLayoutsInternalAsync(path, internalScriptPath, pythonExecutable, logger);
-        }
-
-        internal static async Task<List<SwissDwellingLayout>> LoadLayoutsInternalAsync(
-            string? path = null,
-            string? scriptPath = null,
-            string? pythonExecutable = null,
-            Action<string>? logger = null)
-        {
             // Default logger to Console.WriteLine if not provided
             var effectiveLogger = logger ?? Console.WriteLine;
             var effectivePythonExecutable = pythonExecutable ?? GetDefaultPythonExecutable();
@@ -78,12 +66,12 @@ namespace SwissDwellings
                 path = DataManager.GetExtractedPath();
             }
 
-            // Ensure we are pointing to the extracted folder if a zip was passed but not handled?
-            // Actually DataManager.GetExtractedPath() should handle returning the folder.
-
+            // Resolve script path (Internal override for testing or Bundled resource)
+            var scriptPath = ScriptOverride;
             if (string.IsNullOrEmpty(scriptPath))
             {
-                 throw new ArgumentException("scriptPath must be provided", nameof(scriptPath));
+                var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                scriptPath = Path.Combine(assemblyLocation!, "Resources", "loader.py");
             }
 
             if (!File.Exists(scriptPath))
