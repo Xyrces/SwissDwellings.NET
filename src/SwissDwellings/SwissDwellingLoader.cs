@@ -19,8 +19,12 @@ namespace SwissDwellings
             // Try python3 first, then python
             try
             {
-                Process.Start(new ProcessStartInfo("python3", "--version") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
-                return _defaultPythonExecutable = "python3";
+                var p = Process.Start(new ProcessStartInfo("python3", "--version") { CreateNoWindow = true, UseShellExecute = false });
+                p?.WaitForExit();
+                if (p?.ExitCode == 0)
+                {
+                    return _defaultPythonExecutable = "python3";
+                }
             }
             catch
             {
