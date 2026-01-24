@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using SwissDwellings.Data;
@@ -7,14 +7,15 @@ using FluentAssertions;
 
 namespace SwissDwellings.Tests
 {
-    public class SwissDwellingLoaderTests
+    public class SwissDwellingLoaderTests : IAsyncLifetime
     {
-        [Fact]
-        public async Task LoadLayoutsAsync_ReturnsLayouts_WhenScriptExecutedSuccessfully()
+        private string _scriptPath;
+        private string _dataPath;
+
+        public async Task InitializeAsync()
         {
-            // Arrange
-            var scriptPath = Path.GetTempFileName() + ".py";
-            var dataPath = Path.GetTempFileName(); // Dummy data path
+            _scriptPath = Path.GetTempFileName() + ".py";
+            _dataPath = Path.GetTempFileName(); // Dummy data path
 
             // Create a simple python script that prints JSON to stdout
             var pythonCode = @"
@@ -36,26 +37,29 @@ data = [
 ]
 print(json.dumps(data))
 ";
-            await File.WriteAllTextAsync(scriptPath, pythonCode);
-            await File.WriteAllTextAsync(dataPath, "dummy data");
+            await File.WriteAllTextAsync(_scriptPath, pythonCode);
+            await File.WriteAllTextAsync(_dataPath, "dummy data");
+        }
 
-            try
-            {
-                // Act
-                // Use the internal overload to test with a specific script
-                var result = await SwissDwellingLoader.LoadLayoutsInternalAsync(dataPath, scriptPath);
+        public async Task DisposeAsync()
+        {
+             // Cleanup
+            if (File.Exists(_scriptPath)) File.Delete(_scriptPath);
+            if (File.Exists(_dataPath)) File.Delete(_dataPath);
+            await Task.CompletedTask;
+        }
 
-                // Assert
-                result.Should().NotBeNull();
-                result.Should().HaveCount(1);
-                result[0].Id.Should().Be("test_id");
-            }
-            finally
-            {
-                // Cleanup
-                if (File.Exists(scriptPath)) File.Delete(scriptPath);
-                if (File.Exists(dataPath)) File.Delete(dataPath);
-            }
+        [Fact]
+        public async Task LoadLayoutsAsync_ReturnsLayouts_WhenScriptExecutedSuccessfully()
+        {
+            // Act
+            // Use the internal overload to test with a specific script
+            var result = await SwissDwellingLoader.LoadLayoutsInternalAsync(_dataPath, _scriptPath);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().HaveCount(1);
+            result[0].Id.Should().Be("test_id");
         }
     }
 }

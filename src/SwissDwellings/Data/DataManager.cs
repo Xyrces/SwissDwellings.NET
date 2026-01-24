@@ -65,8 +65,17 @@ namespace SwissDwellings.Data
                 }
                 catch (Exception ex)
                 {
-                     // Cleanup on failure?
-                     throw new InvalidOperationException($"Failed to extract dataset: {ex.Message}", ex);
+                     // Cleanup on failure: delete the potentially corrupted zip so it can be re-downloaded
+                     if (File.Exists(zipPath))
+                     {
+                         try { File.Delete(zipPath); } catch { }
+                     }
+                     if (Directory.Exists(extractPath))
+                     {
+                         try { Directory.Delete(extractPath, true); } catch { }
+                     }
+
+                     throw new InvalidOperationException($"Failed to extract dataset: {ex.Message}. Corrupted zip file has been deleted.", ex);
                 }
                 safeLog("Extraction complete.");
             }
