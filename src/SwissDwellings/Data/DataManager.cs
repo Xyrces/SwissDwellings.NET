@@ -30,6 +30,12 @@ namespace SwissDwellings.Data
                 // For now, we won't actually download anything to avoid external calls,
                 // but this is where the download and extraction would happen.
                 await Task.CompletedTask;
+
+                // Verify file exists after "download"
+                if (!File.Exists(path))
+                {
+                    throw new FileNotFoundException($"Dataset failed to download or does not exist at {path}. Download logic is currently a placeholder.");
+                }
             }
         }
     }

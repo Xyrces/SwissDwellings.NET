@@ -10,15 +10,39 @@ namespace SwissDwellings
 {
     public static class SwissDwellingLoader
     {
+        private static string? _defaultPythonExecutable;
+
+        private static string GetDefaultPythonExecutable()
+        {
+            if (_defaultPythonExecutable != null) return _defaultPythonExecutable;
+
+            // Try python3 first, then python
+            try
+            {
+                Process.Start(new ProcessStartInfo("python3", "--version") { CreateNoWindow = true, UseShellExecute = false })?.WaitForExit();
+                return _defaultPythonExecutable = "python3";
+            }
+            catch
+            {
+                // Ignore and try python
+            }
+
+            return _defaultPythonExecutable = "python";
+        }
+
         public static async Task<List<SwissDwellingLayout>> LoadLayoutsAsync(
             string? path = null,
             string? scriptPath = null,
-            string pythonExecutable = "python3",
+            string? pythonExecutable = null,
             Action<string>? logger = null)
         {
+            // Default logger to Console.WriteLine if not provided
+            var effectiveLogger = logger ?? Console.WriteLine;
+            var effectivePythonExecutable = pythonExecutable ?? GetDefaultPythonExecutable();
+
             if (string.IsNullOrEmpty(path))
             {
-                await DataManager.EnsureDataAsync(logger ?? (_ => { }));
+                await DataManager.EnsureDataAsync(effectiveLogger);
                 path = DataManager.GetPath();
             }
 
@@ -29,7 +53,7 @@ namespace SwissDwellings
 
             var psi = new ProcessStartInfo
             {
-                FileName = pythonExecutable,
+                FileName = effectivePythonExecutable,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
