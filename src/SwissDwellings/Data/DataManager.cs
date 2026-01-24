@@ -22,14 +22,15 @@ namespace SwissDwellings.Data
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SwissDwellings", "data");
         }
 
-        public static async Task EnsureDataAsync(Action<string> log)
+        public static async Task EnsureDataAsync(Action<string>? log = null)
         {
+            var safeLog = log ?? Console.WriteLine;
             var zipPath = GetPath();
             var extractPath = GetExtractedPath();
 
             if (!File.Exists(zipPath) && !Directory.Exists(extractPath))
             {
-                log($"Downloading SwissDwellings dataset to {zipPath}...");
+                safeLog($"Downloading SwissDwellings dataset to {zipPath}...");
 
                 // Ensure directory exists
                 var dir = Path.GetDirectoryName(zipPath);
@@ -52,12 +53,12 @@ namespace SwissDwellings.Data
                         }
                     }
                 }
-                log("Download complete.");
+                safeLog("Download complete.");
             }
 
             if (File.Exists(zipPath) && !Directory.Exists(extractPath))
             {
-                log($"Extracting dataset to {extractPath}...");
+                safeLog($"Extracting dataset to {extractPath}...");
                 try
                 {
                     ZipFile.ExtractToDirectory(zipPath, extractPath);
@@ -67,7 +68,7 @@ namespace SwissDwellings.Data
                      // Cleanup on failure?
                      throw new InvalidOperationException($"Failed to extract dataset: {ex.Message}", ex);
                 }
-                log("Extraction complete.");
+                safeLog("Extraction complete.");
             }
 
             // Verify

@@ -17,7 +17,7 @@ namespace SwissDwellings
         {
             if (_defaultPythonExecutable != null) return _defaultPythonExecutable;
 
-            // Try python3 first, then python
+            // Try python3 first
             try
             {
                 var p = Process.Start(new ProcessStartInfo("python3", "--version") { CreateNoWindow = true, UseShellExecute = false });
@@ -29,10 +29,25 @@ namespace SwissDwellings
             }
             catch
             {
-                // Ignore and try python
+                // Ignore
             }
 
-            return _defaultPythonExecutable = "python";
+            // Try python
+            try
+            {
+                var p = Process.Start(new ProcessStartInfo("python", "--version") { CreateNoWindow = true, UseShellExecute = false });
+                p?.WaitForExit();
+                if (p?.ExitCode == 0)
+                {
+                    return _defaultPythonExecutable = "python";
+                }
+            }
+            catch
+            {
+                // Ignore
+            }
+
+            throw new InvalidOperationException("Could not find 'python3' or 'python' on the system PATH. Please install Python to use this library.");
         }
 
         public static async Task<List<SwissDwellingLayout>> LoadLayoutsAsync(
