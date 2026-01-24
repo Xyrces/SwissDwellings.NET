@@ -42,7 +42,8 @@ print(json.dumps(data))
             try
             {
                 // Act
-                var result = await SwissDwellingLoader.LoadLayoutsAsync(dataPath, scriptPath);
+                // Use the internal overload to test with a specific script
+                var result = await SwissDwellingLoader.LoadLayoutsInternalAsync(dataPath, scriptPath);
 
                 // Assert
                 result.Should().NotBeNull();

@@ -12,19 +12,27 @@ namespace SwissDwellings.Data
 
         public static string GetPath()
         {
-            // Default path for the dataset
+            // Default path for the dataset zip
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SwissDwellings", "dataset.zip");
+        }
+
+        public static string GetExtractedPath()
+        {
+            // Path where data is extracted
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SwissDwellings", "data");
         }
 
         public static async Task EnsureDataAsync(Action<string> log)
         {
-            var path = GetPath();
-            if (!File.Exists(path))
+            var zipPath = GetPath();
+            var extractPath = GetExtractedPath();
+
+            if (!File.Exists(zipPath) && !Directory.Exists(extractPath))
             {
-                log($"Downloading SwissDwellings dataset to {path}...");
+                log($"Downloading SwissDwellings dataset to {zipPath}...");
 
                 // Ensure directory exists
-                var dir = Path.GetDirectoryName(path);
+                var dir = Path.GetDirectoryName(zipPath);
                 if (dir != null && !Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
@@ -38,28 +46,40 @@ namespace SwissDwellings.Data
                     {
                         response.EnsureSuccessStatusCode();
                         using (var stream = await response.Content.ReadAsStreamAsync())
-                        using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                        using (var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
                             await stream.CopyToAsync(fileStream);
                         }
                     }
                 }
                 log("Download complete.");
+            }
 
-                // Note: Extraction logic would go here if we were processing the zip,
-                // but the requirements imply passing the path (likely the zip or a folder) to the loader.
-                // Assuming the python script handles the zip or we just need the file.
-                // If extraction is needed:
-                /*
-                log("Extracting dataset...");
-                ZipFile.ExtractToDirectory(path, dir);
-                */
-
-                // Verify file exists after download
-                if (!File.Exists(path))
+            if (File.Exists(zipPath) && !Directory.Exists(extractPath))
+            {
+                log($"Extracting dataset to {extractPath}...");
+                try
                 {
-                    throw new FileNotFoundException($"Dataset failed to download or does not exist at {path}.");
+                    ZipFile.ExtractToDirectory(zipPath, extractPath);
                 }
+                catch (Exception ex)
+                {
+                     // Cleanup on failure?
+                     throw new InvalidOperationException($"Failed to extract dataset: {ex.Message}", ex);
+                }
+                log("Extraction complete.");
+            }
+
+            // Verify
+            if (!Directory.Exists(extractPath))
+            {
+                 // If zip exists but extract failed or didn't happen
+                 if (!File.Exists(zipPath))
+                 {
+                    throw new FileNotFoundException($"Dataset failed to download or does not exist at {zipPath}.");
+                 }
+                 // If extraction was skipped for some reason
+                 throw new DirectoryNotFoundException($"Dataset extraction failed or directory does not exist at {extractPath}.");
             }
         }
     }

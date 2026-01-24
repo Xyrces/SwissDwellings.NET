@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using SwissDwellings.Data;
@@ -36,6 +37,18 @@ namespace SwissDwellings
 
         public static async Task<List<SwissDwellingLayout>> LoadLayoutsAsync(
             string? path = null,
+            string? pythonExecutable = null,
+            Action<string>? logger = null)
+        {
+            // Resolve the internal script path
+            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var internalScriptPath = Path.Combine(assemblyLocation!, "Resources", "loader.py");
+
+            return await LoadLayoutsInternalAsync(path, internalScriptPath, pythonExecutable, logger);
+        }
+
+        internal static async Task<List<SwissDwellingLayout>> LoadLayoutsInternalAsync(
+            string? path = null,
             string? scriptPath = null,
             string? pythonExecutable = null,
             Action<string>? logger = null)
@@ -47,12 +60,20 @@ namespace SwissDwellings
             if (string.IsNullOrEmpty(path))
             {
                 await DataManager.EnsureDataAsync(effectiveLogger);
-                path = DataManager.GetPath();
+                path = DataManager.GetExtractedPath();
             }
+
+            // Ensure we are pointing to the extracted folder if a zip was passed but not handled?
+            // Actually DataManager.GetExtractedPath() should handle returning the folder.
 
             if (string.IsNullOrEmpty(scriptPath))
             {
-                throw new ArgumentException("scriptPath must be provided", nameof(scriptPath));
+                 throw new ArgumentException("scriptPath must be provided", nameof(scriptPath));
+            }
+
+            if (!File.Exists(scriptPath))
+            {
+                throw new FileNotFoundException($"Python loader script not found at {scriptPath}");
             }
 
             var psi = new ProcessStartInfo
