@@ -10,11 +10,15 @@ namespace SwissDwellings
 {
     public static class SwissDwellingLoader
     {
-        public static async Task<List<SwissDwellingLayout>> LoadLayoutsAsync(string? path = null, string? scriptPath = null)
+        public static async Task<List<SwissDwellingLayout>> LoadLayoutsAsync(
+            string? path = null,
+            string? scriptPath = null,
+            string pythonExecutable = "python",
+            Action<string>? logger = null)
         {
             if (string.IsNullOrEmpty(path))
             {
-                await DataManager.EnsureDataAsync(Console.WriteLine);
+                await DataManager.EnsureDataAsync(logger ?? (_ => { }));
                 path = DataManager.GetPath();
             }
 
@@ -25,7 +29,7 @@ namespace SwissDwellings
 
             var psi = new ProcessStartInfo
             {
-                FileName = "python",
+                FileName = pythonExecutable,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
