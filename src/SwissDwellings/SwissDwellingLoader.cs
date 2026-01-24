@@ -13,7 +13,7 @@ namespace SwissDwellings
         public static async Task<List<SwissDwellingLayout>> LoadLayoutsAsync(
             string? path = null,
             string? scriptPath = null,
-            string pythonExecutable = "python",
+            string pythonExecutable = "python3",
             Action<string>? logger = null)
         {
             if (string.IsNullOrEmpty(path))
