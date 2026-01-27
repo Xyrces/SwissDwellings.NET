@@ -39,7 +39,7 @@ class Program
                 try
                 {
                     // Call LoadLayoutsAsync.
-                    // This triggers GetDefaultPythonExecutable().
+                    // This triggers GetDefaultPythonExecutableAsync().
                     // It will likely fail later because the default script is not found or fails,
                     // but we only care about the time it takes to get to that point (which includes detection).
                     await SwissDwellingLoader.LoadLayoutsAsync(path: dummyPath);
