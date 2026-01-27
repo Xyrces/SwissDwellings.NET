@@ -14,7 +14,7 @@ namespace SwissDwellings
         private static string? _defaultPythonExecutable;
         internal static string? ScriptOverride { get; set; }
 
-        private static string GetDefaultPythonExecutable()
+        private static async Task<string> GetDefaultPythonExecutableAsync()
         {
             if (_defaultPythonExecutable != null) return _defaultPythonExecutable;
 
@@ -22,10 +22,13 @@ namespace SwissDwellings
             try
             {
                 var p = Process.Start(new ProcessStartInfo("python3", "--version") { CreateNoWindow = true, UseShellExecute = false });
-                p?.WaitForExit();
-                if (p?.ExitCode == 0)
+                if (p != null)
                 {
-                    return _defaultPythonExecutable = "python3";
+                    await p.WaitForExitAsync();
+                    if (p.ExitCode == 0)
+                    {
+                        return _defaultPythonExecutable = "python3";
+                    }
                 }
             }
             catch
@@ -37,10 +40,13 @@ namespace SwissDwellings
             try
             {
                 var p = Process.Start(new ProcessStartInfo("python", "--version") { CreateNoWindow = true, UseShellExecute = false });
-                p?.WaitForExit();
-                if (p?.ExitCode == 0)
+                if (p != null)
                 {
-                    return _defaultPythonExecutable = "python";
+                    await p.WaitForExitAsync();
+                    if (p.ExitCode == 0)
+                    {
+                        return _defaultPythonExecutable = "python";
+                    }
                 }
             }
             catch
@@ -58,7 +64,7 @@ namespace SwissDwellings
         {
             // Default logger to Console.WriteLine if not provided
             var effectiveLogger = logger ?? Console.WriteLine;
-            var effectivePythonExecutable = pythonExecutable ?? GetDefaultPythonExecutable();
+            var effectivePythonExecutable = pythonExecutable ?? await GetDefaultPythonExecutableAsync();
 
             if (string.IsNullOrEmpty(path))
             {
