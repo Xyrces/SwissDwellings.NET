@@ -71,19 +71,46 @@ namespace SwissDwellings
                         {
                             if (geomObj is JsonElement geomEl && geomEl.ValueKind == JsonValueKind.String)
                             {
-                                try
+                                var wkt = geomEl.GetString();
+                                if (!string.IsNullOrEmpty(wkt) && IsPotentialWkt(wkt.AsSpan()))
                                 {
-                                    node.ParsedGeometry = _wktReader.Read(geomEl.GetString());
-                                }
-                                catch
-                                {
-                                    // Ignore or log invalid geometry
+                                    try
+                                    {
+                                        node.ParsedGeometry = _wktReader.Read(wkt);
+                                    }
+                                    catch
+                                    {
+                                        // Ignore or log invalid geometry
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+
+        internal static bool IsPotentialWkt(ReadOnlySpan<char> wktSpan)
+        {
+            wktSpan = wktSpan.Trim();
+            if (wktSpan.IsEmpty) return false;
+
+            if (wktSpan.StartsWith("SRID=", StringComparison.OrdinalIgnoreCase))
+            {
+                var semicolonIndex = wktSpan.IndexOf(';');
+                if (semicolonIndex == -1) return false;
+                wktSpan = wktSpan.Slice(semicolonIndex + 1).Trim();
+            }
+
+            if (wktSpan.StartsWith("POINT", StringComparison.OrdinalIgnoreCase)) return true;
+            if (wktSpan.StartsWith("LINESTRING", StringComparison.OrdinalIgnoreCase)) return true;
+            if (wktSpan.StartsWith("POLYGON", StringComparison.OrdinalIgnoreCase)) return true;
+            if (wktSpan.StartsWith("MULTIPOINT", StringComparison.OrdinalIgnoreCase)) return true;
+            if (wktSpan.StartsWith("MULTILINESTRING", StringComparison.OrdinalIgnoreCase)) return true;
+            if (wktSpan.StartsWith("MULTIPOLYGON", StringComparison.OrdinalIgnoreCase)) return true;
+            if (wktSpan.StartsWith("GEOMETRYCOLLECTION", StringComparison.OrdinalIgnoreCase)) return true;
+
+            return false;
         }
     }
 }
